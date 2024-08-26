@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>Search Results for "{{ query }}"</h1>
+
+{% if restaurants %}
+<ul>
+{% for restaurant in restaurants %}
+<li><a href="/restaurant/{{ restaurant.id }}">{{ restaurant.name }}</a></li>
+{% endfor %}
+</ul>
+{% else %}
+<p>No restaurants found.</p>
+{% endif %}
+
+<a href="/">Go back</a>
+{% endblock %}
