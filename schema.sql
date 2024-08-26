@@ -1,7 +1,8 @@
 CREATE TABLE users (
     id SERIAL PRIMARY KEY, 
-    username TEXT, 
-    password TEXT
+    username TEXT UNIQUE CONSTRAINT, 
+    password TEXT,
+    role TEXT
     );
 
 CREATE TABLE restaurants (
@@ -10,6 +11,15 @@ CREATE TABLE restaurants (
     description TEXT,
     location TEXT,
     opening_hours TEXT,
-    created_at TIMESTAMP
+    created_at TIMESTAMP,
+    cuisine TEXT
 );
 
+
+CREATE TABLE reviews(
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users,
+    restaurant_id INTEGER REFERENCES restaurants,
+    stars INTEGER,
+    comment TEXT
+);
