@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h2>Remove a restaurant</h2>
+
+
+<form action="/search" method="POST">
+<p>Which restaurant do you want to remove?</p>
+<input type="text" name="query">
+<input type="submit" value="Search">
+</form>
+
+<!--- {% if restaurants %}--->
+<form action="/remove"  method="POST">
+    {% for restaurant in restaurants %}
+    <input type="checkbox" name=restaurants value="{{restaurant.id}}"> {{restaurant.name}} <br>
+{% endfor %}
+
+<input type="submit" value="Remove selected restaurants">
+
+
+<input type="hidden" name="csrf_token" value="{{session.csrf_token}}">
+
+</form>
+{% endif %}
+
+<a href="/">Go back</a>
+
+{% endblock %}
