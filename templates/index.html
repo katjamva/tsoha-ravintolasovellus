@@ -1,16 +1,41 @@
 <!doctype html>
 {% extends "layout.html" %}
-{% block title %}Login page{% endblock %}
-{%block content%}
-{% if session.username %}
-You have logged in with username <b> {{session.username}}</b> <a href="/logout">Logout</a>
+{% block content %}
+{% if session.user_id %}
+You are logged in with username <b> {{session.username}}</b> <a href="/logout">Logout</a>
 {% else %}
 You are not logged in. <a href="/login">Login</a>
 {%endif%}
-<!--form action="/login" method="POST">!
-Username: <input type="text" name="username"> <br>
-Password: <input type="password" name="password"> <br>
-<input type="submit" value="Login">
-<input type="submit" value="Register">-->
-</form>
+
+
+{% if session.user_id %}
+
+<p>
+<form action="/search" method="GET">
+    <input type="text" name="query" placeholder="Search for a restaurant">
+    <input type="submit" value="Search">
+    </form>
+
+<p>
+Top 10 restaurants:
+<ul>
+{% for restaurant in restaurants %}
+<li><a href="/restaurant/{{restaurant.id}}">{{restaurant.name}}</a>
+{% endfor %}
+{% endif %}
+</ul> 
+
+
+
+{% if session.user_id and session.user_role == "admin" %}
+<h3>Admin actions</h3>
+
+<ul>
+<li> <a href="/add">Add a new restaurant</a>
+<li> <a href="/remove">Remove a restaurant</a>
+</ul>
+{% endif %}
+
+
+
 {%endblock%}
