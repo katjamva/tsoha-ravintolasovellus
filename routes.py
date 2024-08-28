@@ -5,11 +5,7 @@ import restaurants
 from users import admin_required, promote_to_admin
 from flask import render_template, request, redirect, url_for
 
-@app.route("/search", methods=["GET"])
-def search():
-    query = request.args["query"]
-    results = restaurants.search(query)
-    return render_template("search_results.html", restaurants=results, query=query)
+
 
 @app.route("/review", methods=["POST"])
 def review():
@@ -38,13 +34,51 @@ def show_restaurant(restaurant_id):
     
     return render_template("restaurant.html", id=restaurant_id, name=info[1], cuisine=info[2], description=info[3], location=info[4], opening_hours=info[5], reviews=reviews)
     
-@app.route("/search_by_name", methods=["GET"])
+@app.route("/name_search", methods=["GET", "POST"])
 @users.admin_required
 def name_search():
-    query = request.args["query"]
-    results = restaurants.search_by_name(query)
-    return render_template("remove.html", restaurants=results, query=query )
+    query = request.form.get("query")
+    results = restaurants.name_search(query)
+    return render_template("remove.html", restaurants=results, query=query)
     
+
+@app.route("/search", methods=["GET"])
+def search():
+    query = request.args["query"]
+    results = restaurants.search(query)
+    return render_template("search_results.html", restaurants=results, query=query)
+
+@app.route("/remove_review", methods=["POST"])
+@users.admin_required
+def remove_review():
+    if request.method == "POST":
+        users.check_csrf()
+        # Retrieve the list of selected review IDs
+        selected_reviews = request.form.getlist("review_ids")
+        print("Selected review IDs:", selected_reviews)  # Debug print
+
+        for review_id in selected_reviews:
+            try:
+                restaurants.remove_review(review_id)
+            except ValueError:
+                print(f"Invalid review ID: {review_id}")
+
+        return redirect("/")
+    return render_template("restaurant.html")
+
+
+@app.route("/remove", methods=["GET", "POST"])
+@users.admin_required
+def remove_restaurant():
+    if request.method == "POST":
+        users.check_csrf()
+        selected_restaurants = request.form["restaurant"]
+        for restaurant_id in selected_restaurants:
+            restaurants.remove_restaurant(restaurant_id)
+        return redirect("/")
+    return render_template("remove.html")
+
+
 @app.route("/add", methods=["GET", "POST"])
 def add_restaurant():
     users.admin_required("admin")
@@ -127,10 +161,10 @@ def logout():
     users.logout()
     return redirect("/")
 
-@app.route("/admin/rights/<username>")
-@users.admin_required
-def grant_admin_rights(username):
-    users.promote_to_admin(username)
-    return f"User {username} has been promoted to admin."
+#@app.route("/admin/rights/<username>")
+#users.admin_required
+#def grant_admin_rights(username):
+#    users.promote_to_admin(username)
+ #   return f"User {username} has been promoted to admin."
         
         
