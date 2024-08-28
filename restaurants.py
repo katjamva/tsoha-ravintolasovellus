@@ -2,6 +2,16 @@ from db import db
 from sqlalchemy import text
 from flask import request
 
+def remove_review(review_id):
+        sql = text("DELETE FROM reviews WHERE id=:review_id")
+        db.session.execute(sql, {"review_id":review_id})
+        db.session.commit()
+
+def remove_restaurant(restaurant_id):
+        sql = text("DELETE FROM restaurants WHERE id=:restaurant_id")
+        db.session.execute(sql, {"restaurant_id":restaurant_id})
+        db.session.commit()
+
 def get_reviews(restaurant_id):
         sql = text("SELECT u.username, r.stars, r.comment FROM reviews r, users u WHERE r.user_id=u.id AND r.restaurant_id=:restaurant_id ORDER BY r.id")
         return db.session.execute(sql, {"restaurant_id":restaurant_id}).fetchall()
@@ -24,11 +34,9 @@ def search(query):
         return db.session.execute(sql, {"query":"%"+query+"%"}).fetchall()
         
 
-def search_by_name(query):
-        sql = text("SELECT id, name FROM restaurants WHERE name LIKE :query")
-        result = db.session.execute(sql, {"query":"%"+query+"%"})
-        searches = result.fetchall()
-        return searches
+def name_search(query):
+        sql = text("SELECT id, name FROM restaurants WHERE name ILIKE :query")
+        return db.session.execute(sql, {"query":"%"+query+"%"}).fetchall()
 
 def add_restaurant(name, cuisine, description, opening_hours, location,):
         sql = text("INSERT INTO restaurants (name, cuisine, description, opening_hours, location) VALUES (:name, :cuisine, :description, :opening_hours, :location) RETURNING id")

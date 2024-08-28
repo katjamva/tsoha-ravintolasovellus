@@ -15,9 +15,25 @@
 
 <ul>
 {% for entry in reviews %}
-<li> {{ entry[0] }} ({{ entry[1] }}/5): entry "{{ entry[2] }}"
+<li> {{ entry[0] }} ({{ entry[1] }}/5): "{{ entry[2] }}"
 {% endfor %}
 </ul>
+
+{% if reviews %}
+<form action="/remove_review" method="POST">
+    <h2>Remove Reviews</h2>
+    {% for review in reviews %}
+    <input type="checkbox" name="review_ids" value="{{ review.id }}"> {{ review.comment }} - {{ review.username }} <br>
+    {% endfor %}
+    <input type="submit" value="Remove selected reviews">
+    <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+</form>
+
+
+{% else %}
+    <p>No reviews found.</p>
+{% endif %}
+
 
 {% if session.user_id %}
 <h3>Review restaurant</h3>
