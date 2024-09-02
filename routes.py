@@ -5,7 +5,44 @@ import restaurants
 from users import admin_required, promote_to_admin
 from flask import render_template, request, redirect, url_for
 
+@app.route("/edit/<int:restaurant_id>", methods=["GET", "POST"])
+def edit(restaurant_id):
+    users.admin_required("admin")
+    
+    if request.method == "GET":
+        restaurant = restaurants.get_restaurant_info(restaurant_id)
+        return render_template("edit.html", restaurant=restaurant)
 
+
+    
+    if request.method == "POST":
+        users.check_csrf()
+        
+        name = request.form["name"]
+        if len(name) < 1 or len(name) > 20:
+            return render_template("error.html", message="Name must be 1-20 characters")
+        
+        cuisine = request.form["cuisine"]
+        if len(cuisine) < 3 or len(cuisine) > 200:
+            return render_template("error.html", message="Cuisine can't be less than 5 or more than 200 characters")
+        
+        
+        description = request.form["description"]
+        if len(description)>1500:
+            return render_template("error.html", message="Description too long, max 1500 characters") 
+        
+        location = request.form["location"]
+        if len(location) < 5 or len(location) > 200:
+            return render_template("error.html", message="Location can't be less than 5 or more than 200 characters")
+        
+        opening_hours = request.form["opening_hours"]
+        if len(opening_hours) < 10 or len(opening_hours) > 100:
+            return render_template("error.html", message="Opening hours can't be less than 10 or more than 100 characters long")
+        
+        restaurants.edit(restaurant_id, name, cuisine, description, location, opening_hours)
+        
+        return redirect("/restaurant/"+str(restaurant_id))
+    
 
 @app.route("/review", methods=["POST"])
 def review():
@@ -48,13 +85,14 @@ def search():
     results = restaurants.search(query)
     return render_template("search_results.html", restaurants=results, query=query)
 
+
 @app.route("/remove_review", methods=["POST"])
 @users.admin_required
 def remove_review():
     if request.method == "POST":
         users.check_csrf()
         # Retrieve the list of selected review IDs
-        selected_reviews = request.form.getlist("review_ids")
+        selected_reviews = request.form.getlist("review_id")
         print("Selected review IDs:", selected_reviews)  # Debug print
 
         for review_id in selected_reviews:
@@ -65,7 +103,6 @@ def remove_review():
 
         return redirect("/")
     return render_template("restaurant.html")
-
 
 @app.route("/remove", methods=["GET", "POST"])
 @users.admin_required

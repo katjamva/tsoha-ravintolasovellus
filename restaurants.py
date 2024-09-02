@@ -1,9 +1,15 @@
 from db import db
 from sqlalchemy import text
 from flask import request
+from sqlalchemy import text
+
+def edit(id, name, cuisine, description, location, opening_hours):
+        sql =text("UPDATE restaurants SET name=:name, cuisine=:cuisine, description=:description, location=:location, opening_hours=:opening_hours WHERE id=:restaurant_id")
+        db.session.execute(sql, {"id":id, "name":name,"cuisine":cuisine, "description":description, "opening_hours":opening_hours, "location":location})
+        db.session.commit()
 
 def remove_review(review_id):
-        sql = text("DELETE FROM reviews WHERE id=:review_id")
+        sql = text("DELETE FROM reviews WHERE id=:restaurant_id")
         db.session.execute(sql, {"review_id":review_id})
         db.session.commit()
 
