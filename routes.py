@@ -91,7 +91,6 @@ def search():
 def remove_review():
     if request.method == "POST":
         users.check_csrf()
-        # Retrieve the list of selected review IDs
         selected_reviews = request.form.getlist("review_id")
         print("Selected review IDs:", selected_reviews)  # Debug print
 
