@@ -172,6 +172,22 @@ def search():
     return render_template("search_results.html", restaurants=results, query=query)
 
 
+@app.route("/remove_review", methods=["POST"])
+@users.admin_required
+def remove_review():
+    if request.method == "POST":
+        users.check_csrf()
+        selected_reviews = request.form.getlist("review_id")
+        print("Selected review IDs:", selected_reviews)  
+
+        for review_id in selected_reviews:
+            try:
+                restaurants.remove_review(review_id)
+            except ValueError:
+                print(f"Invalid review ID: {review_id}")
+
+        return redirect("/")
+    return render_template("restaurant.html")
 
 @app.route("/remove", methods=["GET", "POST"])
 @users.admin_required
