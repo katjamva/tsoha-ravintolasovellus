@@ -8,18 +8,42 @@
     <input type="text" name="name" minlength="1" maxlength="20" required></p>
     
     <p>Cuisine:<br>
-    <textarea name="cuisine" rows="1" cols="20" minlength="5" maxlength="200" required></textarea></p>
+        {% for category in categories %}
+            <label>
+                <input type="checkbox" name="categories" value="{{ category.id }}">
+                {{ category.category }}
+            </label><br>
+        {% endfor %}
+    
+        <p>Or add a new category:<br>
+            <input type="text" name="new_category" placeholder="New category name">
+        </p>
+        
+    </p>
     
     <p>Description:<br>
     <textarea name="description" rows="8" cols="40" maxlength="1500" required></textarea></p>
     
+    <p>Address:<br>
+    <textarea name="address" rows="1" cols="20" minlength="5" maxlength="200" required></textarea></p>
+
+
     <p>Opening hours:<br>
-    <textarea name="opening_hours" rows="3" cols="10" minlength="10" maxlength="100" required></textarea></p>
-    
-    <p>Location:<br>
-    <textarea name="location" rows="1" cols="20" minlength="5" maxlength="200" required></textarea></p>
-    
-    <br>
+
+        <ul>
+            {% for day, index in [('Monday', 0), ('Tuesday', 1), ('Wednesday', 2), ('Thursday', 3), ('Friday', 4), ('Saturday', 5), ('Sunday', 6)] %}
+                <li>{{ day }}:
+                    <input type="time" name="opening_{{ index }}" placeholder="Opening time"> to
+                    <input type="time" name="closing_{{ index }}" placeholder="Closing time">
+                    <label>Closed:</label> 
+                    <input type="checkbox" name="closed_{{ index }}" value="closed">
+                </li>
+            {% endfor %}
+        </ul>
+        </p>
+
+ 
+
     <input type="submit" value="Add">
     <input type="hidden" name="csrf_token" value="{{session.csrf_token}}">
 </form>

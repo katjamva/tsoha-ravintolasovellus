@@ -2,40 +2,34 @@
 {% extends "layout.html" %}
 {% block content %}
 {% if session.user_id %}
-You are logged in with username <b> {{session.username}}</b> <a href="/logout">Logout</a>
+You are logged in with username <b>{{ session.username }}</b> <a href="/logout">Logout</a>
 {% else %}
 You are not logged in. <a href="/login">Login</a>
-{%endif%}
-
+{% endif %}
 
 {% if session.user_id %}
-
 <p>
 <form action="/search" method="GET">
     <input type="text" name="query" placeholder="Search for a restaurant">
     <input type="submit" value="Search">
-    </form>
+</form>
 
-<p>
-Top 10 restaurants:
-<ul>
-{% for restaurant in restaurants %}
-<li><a href="/restaurant/{{restaurant.id}}">{{restaurant.name}}</a>
-{% endfor %}
+<p>Top 10 restaurants by average rating:</p>
+<div class="scroll" id="restaurants">
+    {% for r in restaurants %}
+    <h4>{{loop.index}}. <a href="/restaurant/{{ r.id }}">{{ r.name }}</a> | Average Rating: {{ r.average_rating }}</h4>
+    <hr>
+    {% endfor %}
+</div>
 {% endif %}
-</ul> 
-
-
 
 {% if session.user_id and session.user_role == "admin" %}
 <h3>Admin actions</h3>
-
 <ul>
-<li> <a href="/add">Add a new restaurant</a>
-<li> <a href="/remove">Remove a restaurant</a>
+    <li><a href="/add">Add a new restaurant</a></li>
+    <li><a href="/remove">Remove a restaurant</a></li>
+    <li><a href="/categoryedit">Edit categories</a></li>
 </ul>
 {% endif %}
 
-
-
-{%endblock%}
+{% endblock %}

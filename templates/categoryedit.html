@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block title %}Edit Categories{% endblock %}
+{% block content %}
+
+<h2>Edit or delete categories</h2>
+<form action="/categoryedit" method="POST">
+    <table>
+        <thead>
+            <tr>
+                <th>Select</th>
+                <th>Category Name</th>
+                <th>Edit Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for category in categories %}
+            <tr>
+                <td><input type="checkbox" name="delete_ids" value="{{ category.id }}"></td>
+                <td>{{ category.category }}</td>
+                <td>
+                    <input type="text" name="new_name_{{ category.id }}" value="{{ category.category }}" maxlength="50">
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <input type="submit" name="action" value="Update">
+    <input type="submit" name="action" value="Delete Selected">
+
+    <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+</form>
+
+<p><a href="/">Go back</a></p>
+
+{% endblock %}

@@ -2,5 +2,10 @@
 {% block title%}Error{% endblock %}
 {%block content%}
 Something went wrong: {{message}}
-
+<p>
+    {% if restaurant_id %}
+    <a href="/edit/{{restaurant_id}}">Go back</a></p>
+    {% else %}
+    <p><a href="/">Go back</a></p>
+    {% endif %}
 {% endblock %}

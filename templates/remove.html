@@ -4,24 +4,22 @@
 <h2>Remove a restaurant</h2>
 
 
-<form action="/search" method="POST">
+<form action="/name_search" method="POST">
 <p>Which restaurant do you want to remove?</p>
 <input type="text" name="query">
 <input type="submit" value="Search">
 </form>
 
-<!--- {% if restaurants %}--->
+{% if restaurants %}
 <form action="/remove"  method="POST">
     {% for restaurant in restaurants %}
-    <input type="checkbox" name=restaurants value="{{restaurant.id}}"> {{restaurant.name}} <br>
-{% endfor %}
-
-<input type="submit" value="Remove selected restaurants">
-
-
-<input type="hidden" name="csrf_token" value="{{session.csrf_token}}">
-
+    <input type="checkbox" name=restaurant value="{{restaurant.id}}"> {{restaurant.name}} <br>
+    {% endfor %}
+    <input type="submit" value="Remove selected restaurants">
+    <input type="hidden" name="csrf_token" value="{{session.csrf_token}}">
 </form>
+{% else %}
+    <p>No restaurants found.</p>
 {% endif %}
 
 <a href="/">Go back</a>

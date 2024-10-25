@@ -3,10 +3,26 @@
 
 <ul>
 <li>Name: {{name}}
-<li>Cuisine: {{cuisine}}
+<li>Average rating:{{average_rating}}/5
+<li>Cuisine:
+    <ul>
+        {% for category in categories %}
+            <li>{{ category.category }}</li>
+        {% endfor %}
+    </ul>
 <li>Description: {{description}}
-<li>Location: {{location}}
-<li>Opening hours: {{opening_hours}}
+<li>Address: {{address}}
+<li>Opening hours:
+<ul>
+    {% for day, times in opening_hours.items() %}
+    <li>
+        {% if times[0] is none or times[1] is none%}
+            {{day}}: Closed
+        {% else %}
+            {{day}}: {{times[0]}} - {{times[1]}}
+        {% endif %}
+    </li>
+    {% endfor %}
 </ul>
 
 {% if session.user_id and session.user_role == "admin" %}
@@ -26,9 +42,9 @@
         {% endif %}
         </li>
     {% endfor %}
-    
-    </ul>
 {% endif %}
+
+
 
 
 {% if session.user_id %}
