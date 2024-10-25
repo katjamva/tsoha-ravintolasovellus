@@ -4,6 +4,56 @@ import users
 import restaurants
 from users import admin_required, promote_to_admin
 from flask import render_template, request, redirect, url_for
+from sqlalchemy.sql import text
+from flask import render_template
+
+
+@app.route("/remove_review", methods=["POST"])
+@users.admin_required
+def remove_review():
+    if request.method == "POST":
+        users.check_csrf()
+        selected_reviews = request.form.getlist("review_id")
+        print("Selected review IDs:", selected_reviews)  
+
+        for review_id in selected_reviews:
+            try:
+                restaurants.remove_review(review_id)
+            except ValueError:
+                print(f"Invalid review ID: {review_id}")
+
+        return redirect("/")
+    return render_template("restaurant.html")
+
+
+@app.route("/categoryedit", methods=["GET", "POST"])
+def edit_categories():
+    users.admin_required("admin") 
+
+    if request.method == "GET":
+        categories = restaurants.get_all_categories()
+        return render_template("categoryedit.html", categories=categories)
+
+    if request.method == "POST":
+        users.check_csrf()
+        action = request.form.get("action")
+
+        if action == "Update":
+            for category in restaurants.get_all_categories():
+                new_name = request.form.get(f"new_name_{category.id}")
+                if new_name and new_name != category.category:
+                    restaurants.update_category_name(category.id, new_name)
+            return redirect("/categoryedit")
+
+        elif action == "Delete Selected":
+            delete_ids = request.form.getlist("delete_ids")
+            if delete_ids:
+                delete_ids = list(map(int, delete_ids))  
+                restaurants.remove_category(delete_ids)
+            return redirect("/categoryedit")
+
+    return render_template("error.html", message="Unknown action")
+
 
 @app.route("/edit/<int:restaurant_id>", methods=["GET", "POST"])
 def edit(restaurant_id):
@@ -11,38 +61,63 @@ def edit(restaurant_id):
     
     if request.method == "GET":
         restaurant = restaurants.get_restaurant_info(restaurant_id)
-        return render_template("edit.html", restaurant=restaurant)
+        opening_hours = restaurants.get_opening_hours(restaurant_id)
+        categories = restaurants.get_all_categories()  
+        selected_categories = restaurants.get_categories_for_restaurant(restaurant_id)
+        selected_category_ids = [category[0] for category in selected_categories]
+        
+        return render_template("edit.html", 
+                               restaurant=restaurant, 
+                               opening_hours=opening_hours, 
+                               categories=categories, 
+                               selected_category_ids=selected_category_ids)
 
-
-    
     if request.method == "POST":
         users.check_csrf()
         
         name = request.form["name"]
         if len(name) < 1 or len(name) > 20:
-            return render_template("error.html", message="Name must be 1-20 characters")
-        
-        cuisine = request.form["cuisine"]
-        if len(cuisine) < 3 or len(cuisine) > 200:
-            return render_template("error.html", message="Cuisine can't be less than 5 or more than 200 characters")
-        
+            return render_template("error.html", message="Name must be 1-20 characters", restaurant_id=restaurant_id)
         
         description = request.form["description"]
-        if len(description)>1500:
-            return render_template("error.html", message="Description too long, max 1500 characters") 
+        if len(description) > 1500:
+            return render_template("error.html", message="Description too long, max 1500 characters", restaurant_id=restaurant_id)
+
+        address = request.form["address"]
+        if len(address) < 5 or len(address) > 200:
+            return render_template("error.html", message="Address must be between 5 and 200 characters", restaurant_id=restaurant_id)
+
+        opening_hours = []
+        for i in range(7):
+            opening = request.form.get(f"opening_{i}")
+            closing = request.form.get(f"closing_{i}")
+            if not opening and not closing:
+                opening_hours.append((None, None))
+            elif not opening or not closing:
+                return render_template("error.html", message="You can't leave one of the times empty.", restaurant_id=restaurant_id)
+            else:
+                opening_hours.append((opening, closing))
+
+        restaurants.edit(restaurant_id, name, description, address)
         
-        location = request.form["location"]
-        if len(location) < 5 or len(location) > 200:
-            return render_template("error.html", message="Location can't be less than 5 or more than 200 characters")
+        selected_categories = request.form.getlist("categories")
+        restaurants.update_restaurant_categories(restaurant_id, selected_categories)
         
-        opening_hours = request.form["opening_hours"]
-        if len(opening_hours) < 10 or len(opening_hours) > 100:
-            return render_template("error.html", message="Opening hours can't be less than 10 or more than 100 characters long")
-        
-        restaurants.edit(restaurant_id, name, cuisine, description, location, opening_hours)
-        
-        return redirect("/restaurant/"+str(restaurant_id))
+        new_category = request.form.get("new_category")
+        add_new_category = request.form.get("add_new_category")
+        if new_category and add_new_category == "yes":
+            new_category_id = restaurants.add_category(new_category)
+            if new_category_id:
+                restaurants.add_restaurant_category(restaurant_id, new_category_id)
+            else:
+                return render_template("error.html", message="Failed to add the new category.", restaurant_id=restaurant_id)
     
+        for i in range(7):
+            opening, closing = opening_hours[i]
+            restaurants.edit_openinghours(restaurant_id, opening, closing, i)
+        
+        return redirect("/restaurant/" + str(restaurant_id))
+
 
 @app.route("/review", methods=["POST"])
 def review():
@@ -67,9 +142,20 @@ def review():
 def show_restaurant(restaurant_id):
     info = restaurants.get_restaurant_info(restaurant_id)
     
+    opening_hours = restaurants.get_opening_hours(restaurant_id)
+    
     reviews = restaurants.get_reviews(restaurant_id)
     
-    return render_template("restaurant.html", id=restaurant_id, name=info[1], cuisine=info[2], description=info[3], location=info[4], opening_hours=info[5], reviews=reviews)
+    average_rating = restaurants.rating(restaurant_id)
+    
+    categories = restaurants.get_categories_for_restaurant(restaurant_id)
+    
+    
+    return render_template("restaurant.html", id=restaurant_id, 
+                           name=info[1], categories=categories,
+                           description=info[2], address=info[3], 
+                           opening_hours=opening_hours, reviews=reviews, 
+                           average_rating=average_rating)
     
 @app.route("/name_search", methods=["GET", "POST"])
 @users.admin_required
@@ -86,23 +172,6 @@ def search():
     return render_template("search_results.html", restaurants=results, query=query)
 
 
-@app.route("/remove_review", methods=["POST"])
-@users.admin_required
-def remove_review():
-    if request.method == "POST":
-        users.check_csrf()
-        # Retrieve the list of selected review IDs
-        selected_reviews = request.form.getlist("review_id")
-        print("Selected review IDs:", selected_reviews)  # Debug print
-
-        for review_id in selected_reviews:
-            try:
-                restaurants.remove_review(review_id)
-            except ValueError:
-                print(f"Invalid review ID: {review_id}")
-
-        return redirect("/")
-    return render_template("restaurant.html")
 
 @app.route("/remove", methods=["GET", "POST"])
 @users.admin_required
@@ -121,39 +190,55 @@ def add_restaurant():
     users.admin_required("admin")
     
     if request.method == "GET":
-        return render_template("add.html")
+        categories = restaurants.get_all_categories()  
+        return render_template("add.html", categories=categories)
     
     if request.method == "POST":
         users.check_csrf()
         
-    name = request.form["name"]
-    if len(name) < 1 or len(name) > 20:
-        return render_template("error.html", message="Name must be 1-20 characters")
-    
-    cuisine = request.form["cuisine"]
-    if len(cuisine) < 3 or len(cuisine) > 200:
-        return render_template("error.html", message="Cuisine can't be less than 5 or more than 200 characters")
-    
-    
-    description = request.form["description"]
-    if len(description)>1500:
-        return render_template("error.html", message="Description too long, max 1500 characters") 
-    
-    location = request.form["location"]
-    if len(location) < 5 or len(location) > 200:
-        return render_template("error.html", message="Location can't be less than 5 or more than 200 characters")
-    
-    opening_hours = request.form["opening_hours"]
-    if len(opening_hours) < 10 or len(opening_hours) > 100:
-        return render_template("error.html", message="Opening hours can't be less than 10 or more than 100 characters long")
-    
+        name = request.form["name"]
+        if len(name) < 1 or len(name) > 20:
+            return render_template("error.html", message="Name must be 1-20 characters")
+        
+        description = request.form["description"]
+        if len(description)>1500:
+            return render_template("error.html", message="Description too long, max 1500 characters") 
+        
+        address = request.form["address"]
+        if len(address) < 5 or len(address) > 200:
+            return render_template("error.html", message="Address can't be less than 5 or more than 200 characters")        
+        #https://www.geeksforgeeks.org/retrieving-html-from-data-using-flask/
+        opening_hours = []
 
-    restaurant_id = restaurants.add_restaurant(name, cuisine, description, opening_hours, location) 
-    return redirect("/")#+str(restaurant_id))
+        for i in range(7):
+            opening = request.form.get(f"opening_{i}")
+            closing = request.form.get(f"closing_{i}")
+            print(f"Day {i}: Opening: {opening}, Closing: {closing}")
+            
+            if not opening and not closing:
+                opening_hours.append((None, None))  
+            elif not opening or not closing:
+                return render_template("error.html", message="You can't have either of the times empty")
+            else:
+                opening_hours.append((opening, closing))
 
-@app.route("/", methods=['GET','POST'])
+        restaurant_id = restaurants.add_restaurant(name, description, address, opening_hours)
+        
+        selected_categories = request.form.getlist("categories")
+        for category_id in selected_categories:
+            restaurants.add_restaurant_category(restaurant_id, category_id)
+            
+        new_category = request.form.get("new_category")
+        if new_category:
+            restaurants.add_category(new_category)
+            
+        return redirect("/")#+str(restaurant_id))
+
+@app.route("/", methods=["GET","POST"])
 def index():
-    return render_template("index.html", restaurants=restaurants.get_all_restaurants())
+    result = restaurants.get_top_10()
+    return render_template("index.html", restaurants=result)
+
 
 @app.route("/register", methods=["get", "post"])
 def register():
